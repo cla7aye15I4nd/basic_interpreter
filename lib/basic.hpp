@@ -19,13 +19,14 @@ namespace basic{
   int to_int(const string& str) {
     int result = 0;
     for (auto ch : str)
-      result = result * 10 + ch - '0';
+      if (!isspace(ch))
+        result = result * 10 + ch - '0';
     return result;
   }
 
   bool is_alpha(const std::string& str) {
     for (auto ch : str)
-      if (!isalpha(ch))
+      if (!isalpha(ch) && !isspace(ch))
         return false;
     return true;
   }
@@ -35,7 +36,10 @@ namespace basic{
     string element;
     
     for (auto ptr = str.begin(); ptr != str.end(); ) {
-      if (isspace(*ptr++)) continue;
+      if (isspace(*ptr)) {
+        ptr++;
+        continue;
+      }
       element = "";
       if (isalpha(*ptr)) {
         while (isalpha(*ptr))

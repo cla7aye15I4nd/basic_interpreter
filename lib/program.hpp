@@ -20,7 +20,7 @@ namespace basic{
       
       step () = default;
       step (const step& s) = default;
-
+      
       friend std::ostream& operator<< (std::ostream &sout, const step& s) {
         for (auto str : s.expr)
           sout << str << ' ';
@@ -62,9 +62,9 @@ namespace basic{
 
       std::string content;
 
-      std::cin >> content;
+      std::getline(std::cin, content);
       ASSERT(is_alpha(content), "INVALID NUMBER");
-      ASSERT(map.count(name), "VARIABLE NOT DEFINED");
+      // ASSERT(map.count(name), "VARIABLE NOT DEFINED");
 
       map[name] = to_int(content);
     }
@@ -81,17 +81,11 @@ namespace basic{
         if (*ptr == "<") return eval(begin, ptr) <  eval(ptr + 1, end);
         if (*ptr == "=") return eval(begin, ptr) == eval(ptr + 1, end);
       }
+      return 0;
     }
     
     variable_pool map;
     std::map<int, step> program;
-
-    void insert (const string& str) {
-      step s;
-      s.expr = format(str);
-      s.type = command_id[s.expr[1]];
-      program[to_int(s.expr[0])] = s;
-    }
     
     int execute(int line_number) {
       step& s = program[line_number];
@@ -124,9 +118,35 @@ namespace basic{
         std::cout << it -> second;
     }
 
+    bool insert (const string& str) {
+      step s;
+      s.expr = format(str);
+
+      if (!command_id.count(s.expr[1]))
+        return false;
+      
+      s.type = command_id[s.expr[1]];
+
+      /*
+        {"REM", 0},
+        {"LET", 1},
+        {"PRINT", 2},
+        {"INPUT", 3},
+        {"END", 4},
+        {"GOTO", 5},
+        {"IF", 6}
+      */
+      // switch (s.type) {
+      // case 1: 
+      // }
+      
+      program[to_int(s.expr[0])] = s;
+      return true;
+    }
+    
     void run() {
       int line_number = program.begin() -> first;
-      while (~line_number) 
+      while (program.count(line_number)) 
         line_number = execute(line_number);
     }
   };
