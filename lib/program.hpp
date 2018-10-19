@@ -2,6 +2,16 @@
 #define PROGRAM_HPP
 
 namespace basic{
+  class eDIVIDE_BY_ZERO{};
+  class eINVALID_NUMBER{};
+  class eVARIABLE_NOT_DEFINED{};
+  class eLINE_NUMBER_ERROR{};
+  
+  const eDIVIDE_BY_ZERO DIVIDE_BY_ZERO;
+  const eINVALID_NUMBER INVALID_NUMBER;
+  const eVARIABLE_NOT_DEFINED VARIABLE_NOT_DEFINED;
+  const eLINE_NUMBER_ERROR LINE_NUMBER_ERROR;
+  
   static std::map<std::string, int> command_id = {
     {"REM", 0},
     {"LET", 1},
@@ -30,42 +40,77 @@ namespace basic{
     };
     
     int eval(const string& str) {
-      if (is_alpha(str))
-        return to_int(str);
-      ASSERT(map.count(str), "VARIABLE NOT DEFINED");
+      if (is_digit(str))
+        return to_int(str); 
+      ASSERT(map.count(str), VARIABLE_NOT_DEFINED);
       return map[str];
+    }
+
+    int eval(const expr_iter& begin,
+             const expr_iter& end,
+             const expr_iter& start,
+             const std::vector<expr_iter>& match) {
+      std::vector<int> atom;
+      std::vector<char> oper;
+      for (auto ptr = begin; ptr != end; ptr++) {
+        char c = (*ptr)[0];
+        if (c == '+' || c == '-' || c == '*' || c == '/')
+          oper.emplace_back(c);
+        else {
+          if (c == '(') {
+            atom.emplace_back(eval(ptr + 1, match[ptr - start], start, match));
+            ptr = match[ptr - start];
+          } else {
+            atom.emplace_back(eval(*ptr));
+          }
+          while (!oper.empty() && oper.back() != '+' && oper.back() != '-') {
+            char op = oper.back(); oper.pop_back();
+            int y = atom.back(); atom.pop_back();
+            int x = atom.back(); atom.pop_back();
+            if (op == '*') atom.emplace_back(x * y);
+            else if (op == '/') {
+              ASSERT(y, DIVIDE_BY_ZERO);
+              atom.emplace_back(x / y);
+            }
+          }
+        }
+      }
+      while (!oper.empty()) {
+        char op = oper.back(); oper.pop_back();
+        int y = atom.back(); atom.pop_back();
+        int x = atom.back(); atom.pop_back();
+        if (op == '+') atom.emplace_back(x + y);
+        else if (op == '-') atom.emplace_back(x - y);
+      }
+      return atom.back();
     }
     
     int eval(const expr_iter& begin,
              const expr_iter& end) {
-      int first = 0, second = eval(*begin), temp;
-      for (expr_iter ptr = begin + 1; ptr != end; ++ptr) {
-        switch ((*ptr)[0]) {
-        case '+': first += second; second = +eval(*++ptr); break;
-        case '-': first += second; second = -eval(*++ptr); break;
-        case '*': second *= eval(*++ptr); break;
-        case '/':
-          temp = eval(*++ptr);
-          ASSERT(temp, "DIVIDE BY ZERO");
-          second /= temp;
+      std::vector<expr_iter> match(end - begin), stack;
+      for (expr_iter ptr = begin; ptr != end; ptr++) {
+        if (*ptr == "(") stack.emplace_back(ptr);
+        else if (*ptr == ")") {
+          match[stack.back() - begin] = ptr;
+          stack.pop_back();
         }
       }
-      return first + second;
+      return eval(begin, end, begin, match);
     }
 
-    void print(const string& str) {
-      std::cout << eval(str);
+    void print(int digit) {
+      std::cout << digit << std::endl;
     }
 
     void input(const string& name) {
-      std::cout << "?";
+      std::cout << "?\n";
 
       std::string content;
 
       std::getline(std::cin, content);
-      ASSERT(is_alpha(content), "INVALID NUMBER");
+      ASSERT(is_digit(content), INVALID_NUMBER);
       // ASSERT(map.count(name), "VARIABLE NOT DEFINED");
-
+      
       map[name] = to_int(content);
     }
     
@@ -87,24 +132,24 @@ namespace basic{
     variable_pool map;
     std::map<int, step> program;
     
-    int execute(int line_number) {
-      step& s = program[line_number];
+    int execute(step s) {
+      //step& s = program[line_number];
 
       switch (s.type) {
       case 4: return -1;
       case 5:
-        ASSERT(program.count(to_int(s.expr[2])), "LINE NUMBER ERROR");
-        return to_int(s.expr[2]);
-      case 1: assign(s.expr.begin() + 2, s.expr.end()); break;
+        ASSERT(program.count(to_int(s.expr[0])), LINE_NUMBER_ERROR);
+        return to_int(s.expr[0]);
+      case 1: assign(s.expr.begin(), s.expr.end()); break;
       case 6:
-        if (compare(s.expr.begin() + 2, s.expr.end() - 2))
+        if (compare(s.expr.begin(), s.expr.end() - 2))
           return to_int(*s.expr.rbegin());
         break;
-      case 2: print(*(s.expr.begin() + 2)); break;
-      case 3: input(*(s.expr.begin() + 2));
+      case 2: print(eval(s.expr.begin(), s.expr.end())); break;
+      case 3: input(*(s.expr.begin()));
       }
 
-      return line_number + 1;
+      return 0;
     }
     
   public:
@@ -118,36 +163,67 @@ namespace basic{
         std::cout << it -> second;
     }
 
-    bool insert (const string& str) {
+    bool insert (const expression& expr) {
       step s;
-      s.expr = format(str);
-
+      int id = to_int(expr[0]);
+      s.expr = expr;
       if (!command_id.count(s.expr[1]))
         return false;
       
       s.type = command_id[s.expr[1]];
-
-      /*
-        {"REM", 0},
-        {"LET", 1},
-        {"PRINT", 2},
-        {"INPUT", 3},
-        {"END", 4},
-        {"GOTO", 5},
-        {"IF", 6}
-      */
-      // switch (s.type) {
-      // case 1: 
-      // }
+      s.expr.erase(s.expr.begin());
+      s.expr.erase(s.expr.begin());
       
-      program[to_int(s.expr[0])] = s;
+      program[id] = s;
+      return true;
+    }
+
+    bool append(const expression& expr) {
+      step s;
+      s.expr = expr;
+
+      if (!command_id.count(s.expr[0]))
+        return false;
+      
+      s.type = command_id[s.expr[0]];
+      s.expr.erase(s.expr.begin());
+
+      int id = program.empty() ? 0 : (program.rbegin() -> first);
+      program[id] = s;
+      try {
+        execute(program[id]);
+      } catch(eDIVIDE_BY_ZERO) {
+        std::cout << "DIVIDE BY ZERO" << std::endl;
+      } catch(eINVALID_NUMBER) {
+        std::cout << "INVALID NUMBER" << std::endl;
+      } catch(eVARIABLE_NOT_DEFINED) {
+        std::cout << "VARIABLE NOT DEFINED" << std::endl;
+      } catch(eLINE_NUMBER_ERROR) {
+        std::cout << "LINE NUMBER ERROR" << std::endl;
+      }
       return true;
     }
     
     void run() {
-      int line_number = program.begin() -> first;
-      while (program.count(line_number)) 
-        line_number = execute(line_number);
+      try {
+        auto ptr = program.begin();
+        while (ptr != program.end()) {
+          int ret = execute(ptr -> second);
+          switch (ret) {
+          case -1: return;
+          case  0: ptr++; break;
+          default: ptr = program.find(ret);
+          }
+        }
+      } catch(eDIVIDE_BY_ZERO) {
+        std::cout << "DIVIDE BY ZERO" << std::endl;
+      } catch(eINVALID_NUMBER) {
+        std::cout << "INVALID NUMBER" << std::endl;
+      } catch(eVARIABLE_NOT_DEFINED) {
+        std::cout << "VARIABLE NOT DEFINED" << std::endl;
+      } catch(eLINE_NUMBER_ERROR) {
+        std::cout << "LINE NUMBER ERROR" << std::endl;
+      }
     }
   };
 }

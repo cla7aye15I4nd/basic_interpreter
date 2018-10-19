@@ -6,8 +6,8 @@
 
 namespace basic{
   class terminal{
-    basic_interpreter interpreter;
-
+    basic_interpreter code, feedback;
+    
   public:
     bool run() {
       string command;
@@ -22,13 +22,22 @@ namespace basic{
 
         if (command == "HELP") {
           std::cout << "Minimal BASIC Interpreter";
+        } else if (command == "CLEAR") {
+          code.clear();
+          feedback.clear();
         } else if (command == "RUN") {
-          interpreter.run();
+          code.run();
         } else if (command == "LIST") {
-          interpreter.show();
+          code.show();
         } else{
-          if (!interpreter.insert(command))
-            std::cout << "Invalid Command";
+          expression expr = format(command);
+          if (is_digit(expr[0])) {
+            if (!code.insert(expr))
+              std::cout << "Invalid Command";
+          } else {
+            if (!feedback.append(expr))
+              std::cout << "Invalid Command";
+          }
         }
 
         std::cout << std::endl;

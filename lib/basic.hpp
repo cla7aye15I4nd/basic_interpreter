@@ -2,6 +2,7 @@
 #define BASIC_HPP
 
 #include <map>
+#include <cctype>
 #include <string>
 #include <vector>
 #include <fstream>
@@ -15,18 +16,17 @@ namespace basic{
   using variable_pool = std::unordered_map<string, int>;
   using expression = std::vector<string>;
   using expr_iter = expression::iterator;
-
+  
   int to_int(const string& str) {
     int result = 0;
     for (auto ch : str)
-      if (!isspace(ch))
-        result = result * 10 + ch - '0';
+      result = result * 10 + ch - '0';
     return result;
   }
 
-  bool is_alpha(const std::string& str) {
+  bool is_digit(const std::string& str) {
     for (auto ch : str)
-      if (!isalpha(ch) && !isspace(ch))
+      if (!isdigit(ch))  
         return false;
     return true;
   }

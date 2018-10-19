@@ -1,1 +1,21 @@
-10 INPUT a
+10 REM print fibnacci
+20 INPUT n
+30 IF n < 1 THEN 20
+40 LET n = n - 1
+50 PRINT 1
+60 LET a = 0
+70 LET b = 1
+80 IF n = 0 THEN 150
+90 LET c = a + b
+100 LET a = b
+110 LET b = c
+120 PRINT b
+130 LET n = n - 1
+140 GOTO 80
+150 END
+RUN
+3
+RUN
+0
+10
+QUIT
