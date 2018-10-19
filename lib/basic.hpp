@@ -31,6 +31,10 @@ namespace basic{
     return true;
   }
 
+  bool is_var(const std::string& str) {
+    return isalpha(str[0]);
+  }
+
   expression format(const string& str) {
     expression result;
     string element;

@@ -7,10 +7,10 @@ namespace basic{
   class eVARIABLE_NOT_DEFINED{};
   class eLINE_NUMBER_ERROR{};
   
-  const eDIVIDE_BY_ZERO DIVIDE_BY_ZERO;
-  const eINVALID_NUMBER INVALID_NUMBER;
-  const eVARIABLE_NOT_DEFINED VARIABLE_NOT_DEFINED;
-  const eLINE_NUMBER_ERROR LINE_NUMBER_ERROR;
+  static const eDIVIDE_BY_ZERO DIVIDE_BY_ZERO;
+  static const eINVALID_NUMBER INVALID_NUMBER;
+  static const eVARIABLE_NOT_DEFINED VARIABLE_NOT_DEFINED;
+  static const eLINE_NUMBER_ERROR LINE_NUMBER_ERROR;
   
   static std::map<std::string, int> command_id = {
     {"REM", 0},
@@ -106,10 +106,9 @@ namespace basic{
       std::cout << "?\n";
 
       std::string content;
-
+      
       std::getline(std::cin, content);
       ASSERT(is_digit(content), INVALID_NUMBER);
-      // ASSERT(map.count(name), "VARIABLE NOT DEFINED");
       
       map[name] = to_int(content);
     }
@@ -163,6 +162,58 @@ namespace basic{
         std::cout << it -> second;
     }
 
+    bool check_expr(const expr_iter& begin,
+                    const expr_iter& end) {
+      int cnt = 0;
+      for (auto ptr = begin; ptr != end; ptr++) {
+        if (*ptr == "(") {
+          ++cnt;
+          if (ptr + 1 == end) return false;
+          if (*(ptr + 1) == ")") return false;
+        }
+        if (*ptr == ")") --cnt;
+        if ((is_var(*ptr) || is_digit(*ptr)) &&
+            ptr + 1 != end &&
+            (is_var(*(ptr + 1)) || is_digit(*(ptr + 1)))) return false;
+      }
+      
+      return cnt == 0;
+    }
+    
+#define REPORT(var) if (var) return false;
+    bool check(step s) {
+      switch (s.type) {
+      case 1:
+        REPORT(s.expr.size() < 3);
+        REPORT(!is_var(s.expr[0]));
+        REPORT(s.expr[1] != "=");
+        REPORT(!check_expr(s.expr.begin() + 2, s.expr.end()));
+        break;
+      case 2:
+        REPORT(s.expr.size() < 1);
+        REPORT(!check_expr(s.expr.begin(), s.expr.end()));
+        break;
+      case 3:
+        REPORT(s.expr.size() != 1);
+        REPORT(!check_expr(s.expr.begin(), s.expr.end()));
+        break;
+      case 4:
+        REPORT(s.expr.size() != 0);
+        break;
+      case 5:
+        REPORT(s.expr.size() != 1);
+        REPORT(!is_digit(s.expr[0]));
+        break;
+      case 6:
+        REPORT(s.expr.size() < 5);
+        REPORT(!is_digit(*(s.expr.end() - 1)));
+        REPORT(*(s.expr.end() - 2) != "THEN");
+        REPORT(!check_expr(s.expr.begin(), s.expr.end() - 2));
+      }
+
+      return true;
+    }
+    
     bool insert (const expression& expr) {
       step s;
       int id = to_int(expr[0]);
@@ -173,6 +224,8 @@ namespace basic{
       s.type = command_id[s.expr[1]];
       s.expr.erase(s.expr.begin());
       s.expr.erase(s.expr.begin());
+
+      if (!check(s)) return false;
       
       program[id] = s;
       return true;
@@ -187,6 +240,7 @@ namespace basic{
       
       s.type = command_id[s.expr[0]];
       s.expr.erase(s.expr.begin());
+      if (!check(s)) return false;
 
       int id = program.empty() ? 0 : (program.rbegin() -> first);
       program[id] = s;
