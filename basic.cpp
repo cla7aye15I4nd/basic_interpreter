@@ -3,6 +3,8 @@
 basic::terminal term;
 
 int main() {
-  term.run();
-  return 0;
+    // std::cerr << basic::is_digit("30");
+    // std::cerr << basic::to_int("30");
+    term.run();
+    return 0;
 }
