@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS = -Wall -O2 
 
-score: basic
+code: code.cpp
 	$(CXX) -o $@ $^ $(CXXFLAGS)
 
 clean:
