@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -Wall -O2 
+CXXFLAGS = -std=c++11 -Wall -O2 
 
 code: code.cpp
 	$(CXX) -o $@ $^ $(CXXFLAGS)
