@@ -1,0 +1,11 @@
+#ifndef BASIC_EXPR_HPP
+#define BASIC_EXPR_HPP
+
+#include "expr/expr.hpp"
+class basic_engine: public expr_engine<int> {
+    int getType(const std::string& str) const{
+        
+    }
+};
+
+#endif

@@ -23,7 +23,7 @@ namespace basic{
     };
 
     static const std::string command[] = {"REM", "LET", "PRINT", "INPUT", "END", "GOTO", "IF"};
-  
+    
     class basic_interpreter{
         class step{
         public:
@@ -85,13 +85,6 @@ namespace basic{
                 if (oper[p] == '+') result += atom[p + 1];
                 else result -= atom[p + 1];
             }
-            // while (!oper.empty()) {
-            //     char op = oper.back(); oper.pop_back();
-            //     int y = atom.back(); atom.pop_back();
-            //     int x = atom.back(); atom.pop_back();
-            //     if (op == '+') atom.emplace_back(x + y);
-            //     else if (op == '-') atom.emplace_back(x - y);
-            // }
             return result;
         }
     
